@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/stunndard/goicy/config"
-	"github.com/stunndard/goicy/daemon"
-	"github.com/stunndard/goicy/logger"
-	"github.com/stunndard/goicy/playlist"
-	"github.com/stunndard/goicy/stream"
-	"github.com/stunndard/goicy/util"
+
+	"git.philgore.net/CS497/Federation/Enterprise/config"
+	"git.philgore.net/CS497/Federation/Enterprise/daemon"
+	"git.philgore.net/CS497/Federation/Enterprise/logger"
+	"git.philgore.net/CS497/Federation/Enterprise/playlist"
+	"git.philgore.net/CS497/Federation/Enterprise/stream"
+	"git.philgore.net/CS497/Federation/Enterprise/util"
+	"github.com/jinzhu/gorm"
 
 	"os"
 	"os/signal"
@@ -15,6 +17,8 @@ import (
 	"syscall"
 	"time"
 )
+
+var db *gorm.DB
 
 func main() {
 
@@ -40,8 +44,6 @@ func main() {
 	}
 	inifile := string(os.Args[1])
 
-	//inifile := "d:\\work\\src\\Go\\src\\github.com\\stunndard\\goicy\\tests\\goicy.ini"
-
 	logger.TermLn("Loading config...", logger.LOG_DEBUG)
 	err := config.LoadConfig(inifile)
 	if err != nil {
@@ -52,6 +54,7 @@ func main() {
 	logger.File("goicy v"+config.Version+" started", logger.LOG_INFO)
 	logger.Log("Loaded config file: "+inifile, logger.LOG_INFO)
 
+	pl := playlist.InitPlaylist()
 	// daemonizing
 	if config.Cfg.IsDaemon && runtime.GOOS == "linux" {
 		logger.Log("Daemon mode, detaching from terminal...", logger.LOG_INFO)
@@ -81,20 +84,14 @@ func main() {
 
 	defer logger.Log("goicy exiting", logger.LOG_INFO)
 
-	if err := playlist.Load(); err != nil {
-		logger.Log("Cannot load playlist file", logger.LOG_ERROR)
-		logger.Log(err.Error(), logger.LOG_ERROR)
-		return
-	}
-
 	retries := 0
-	filename := playlist.First()
+	track := pl.First()
 	for {
 		var err error
 		if config.Cfg.StreamType == "file" {
-			err = stream.StreamFile(filename)
+			err = stream.StreamFile(track.TrackURL)
 		} else {
-			err = stream.StreamFFMPEG(filename)
+			err = stream.StreamFFMPEG(track.TrackURL)
 		}
 
 		if err != nil {
@@ -112,7 +109,7 @@ func main() {
 			// if that was a file error
 			switch err.(type) {
 			case *util.FileError:
-				filename = playlist.Next()
+				track = pl.Next()
 			default:
 
 			}
@@ -130,6 +127,6 @@ func main() {
 			continue
 		}
 		retries = 0
-		filename = playlist.Next()
+		track = pl.Next()
 	}
 }

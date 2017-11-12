@@ -1,74 +1,148 @@
 package playlist
 
 import (
-	"errors"
-	"github.com/stunndard/goicy/config"
-	"github.com/stunndard/goicy/util"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"strings"
+	"net/http"
+	"strconv"
+
+	"git.philgore.net/CS497/Federation/Enterprise/config"
+	"git.philgore.net/CS497/Federation/Enterprise/logger"
+	"github.com/jinzhu/gorm"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var playlist []string
-var idx int
-var np string
-
-func First() string {
-	if len(playlist) > 0 {
-		return playlist[0]
-	} else {
-		return ""
-	}
+type Playlist struct {
+	Playing Track
+	Queue   []Track
+	db      *gorm.DB
 }
 
-func Next() string {
-	//save_idx;
-
-	// get_next_file := pl.Strings[idx];
-	if idx > len(playlist)-1 {
-		idx = 0
-	}
-	np = playlist[idx]
-	Load()
-	if idx > len(playlist)-1 {
-		idx = 0
-	}
-	for (np == playlist[idx]) && (len(playlist) > 1) {
-		if !config.Cfg.PlayRandom {
-			idx = idx + 1
-			if idx > len(playlist)-1 {
-				idx = 0
-			}
-		} else {
-			idx = rand.Intn(len(playlist))
-		}
-	}
-	return playlist[idx]
-}
-
-func Load() error {
-	if ok := util.FileExists(config.Cfg.Playlist); !ok {
-		return errors.New("Playlist file doesn't exist")
-	}
-
-	content, err := ioutil.ReadFile(config.Cfg.Playlist)
+func InitPlaylist() Playlist {
+	pl := Playlist{}
+	db, err := gorm.Open("sqlite3", config.Cfg.Playlist+"?_busy_timeout=5000")
+	pl.db = db
 	if err != nil {
-		return err
+		logger.Term("could not open database file"+err.Error(), logger.LOG_ERROR)
 	}
-	playlist = strings.Split(string(content), "\n")
 
-	i := 0
-	for i < len(playlist) {
-		playlist[i] = strings.Replace(playlist[i], "\r", "", -1)
-		if ok := util.FileExists(playlist[i]); !ok && !strings.HasPrefix(playlist[i], "http") {
-			playlist = append(playlist[:i], playlist[i+1:]...)
-			continue
+	pl.loadDB()
+	return pl
+}
+
+func (pl Playlist) loadDB() {
+	fmt.Println("loading the DB")
+	pl.db.AutoMigrate(&Album{})
+	pl.db.AutoMigrate(&Track{})
+
+	fmar := AlbumResponse{}
+	for page := 0; page <= fmar.TotalPages; page++ {
+		fmt.Println("Getting album list!")
+		req := "https://freemusicarchive.org/api/get/albums.json?" +
+			"api_key=" + config.Cfg.ApiKey + "&curator_handle=" + config.Cfg.Curator +
+			"&page=" + strconv.Itoa(page)
+		fmt.Println(req)
+		resp, err := http.Get(req)
+		if err != nil {
+			logger.Log("could not get Free Music Archive information"+
+				err.Error(), logger.LOG_ERROR)
 		}
-		i += 1
-	}
-	if len(playlist) < 1 {
-		return errors.New("Error: all files in the playlist do not exist")
+		defer resp.Body.Close()
+
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = json.Unmarshal(body, &fmar)
+		if err != nil {
+			logger.Log("could not unmarshal free music archive response"+
+				err.Error(), logger.LOG_ERROR)
+		}
+		for _, album := range fmar.Albums {
+			fmt.Println("Adding album..." + album.AlbumTitle)
+
+			tr := TrackResponse{}
+			for i := 0; i <= tr.TotalPages; i++ {
+				r, e := http.Get("https://freemusicarchive.org/api/get/tracks.json?" +
+					"api_key=" + config.Cfg.ApiKey + "&album_id=" + album.AlbumID +
+					"&page=" + strconv.Itoa(i))
+				if e != nil {
+					logger.Log("could not unmarshal free music archive response"+
+						err.Error(), logger.LOG_ERROR)
+				}
+				defer r.Body.Close()
+
+				body, _ := ioutil.ReadAll(r.Body)
+				err := json.Unmarshal(body, &tr)
+				if err != nil {
+					logger.Log("could not unmarshal free music archive response"+
+						err.Error(), logger.LOG_ERROR)
+				}
+				for _, track := range tr.Tracks {
+					fmt.Println("Adding track! " + track.TrackTitle)
+					var count int
+					pl.db.Model(&Track{}).Where(Track{TrackID: track.TrackID}).Count(&count)
+					if count == 0 {
+						pl.db.Create(&track)
+					} else {
+						pl.db.Where(Track{TrackID: track.TrackID}).Update(&track)
+					}
+				}
+			}
+
+			var count int
+			pl.db.Model(Album{}).Where(Album{AlbumID: album.AlbumID}).Count(&count)
+			if count == 0 {
+				pl.db.Create(&album)
+			} else {
+				pl.db.Where(Album{AlbumID: album.AlbumID}).Update(&album)
+			}
+		}
 	}
 
-	return nil
+}
+
+func (pl Playlist) First() {
+	t = pl.randomTrack()
+	return t
+}
+
+func (pl Playlist) Next() {
+
+	var count int
+	pl.db.Model(&Track{}).Count(&count)
+
+	if count == 0 {
+		logger.Term("No records in the database!", logger.LOG_ERROR)
+	}
+	if len(playlist) == 0 {
+		t := pl.randomTrack()
+		pl.Playing = t;
+	} else {
+		t := pl.Playlist[0]
+		pl.Playlist = pl.Playlist[1:]
+		pl.Playing = t
+	}
+}
+
+func (pl Playlist) randomTrack() Track {
+
+	var count int
+	pl.db.Model(&Track{}).Count(&count)
+	row := count % rand.Int()
+	var t Track
+	pl.db.Where(Track{ID: row}).First(&t)
+	pl.Playing = t
+	return t
+}
+
+func (pl Playlist) Add(tID string) {
+	vat t Track
+	pl.db.Where(&Track{TrackID: tID}).First(&t)
+	//Check if the playlist already has the file, if so increase it's priority,
+	//else just add it to the end of the playlist.
+	pl.Playlist = append(pl.Playlist, t)
+}
+
+func (pl Playlist) Close() {
+	pl.db.Close()
 }

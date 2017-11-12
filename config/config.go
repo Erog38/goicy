@@ -32,11 +32,14 @@ type Config struct {
 	StreamGenre       string `ini:"genre"`
 	StreamPublic      bool   `ini:"public"`
 	IsDaemon          bool   `ini:"daemon"`
+	MaxPlaylistSize   int    `ini: "maxlength"`
+	ApiKey            string `ini:"apikey"`
+	Curator           string `ini:"fmacurator"`
 	PidFile           string
 	FFMPEGPath        string
 }
 
-const Version = "0.3"
+const Version = "0.4"
 
 var Cfg Config
 
@@ -71,6 +74,8 @@ func LoadConfig(filename string) error {
 	Cfg.PlaylistType = ini.Section("playlist").Key("playlisttype").Value()
 	Cfg.Playlist = ini.Section("playlist").Key("playlist").Value()
 	Cfg.PlayRandom, _ = ini.Section("playlist").Key("playrandom").Bool()
+	Cfg.ApiKey = ini.Section("playlist").Key("apikey").Value()
+	Cfg.Curator = ini.Section("playlist").Key("fmacurator").Value()
 
 	Cfg.BufferSize, _ = ini.Section("misc").Key("buffersize").Int()
 	Cfg.BufferSize *= 1000

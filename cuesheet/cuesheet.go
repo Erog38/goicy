@@ -2,8 +2,8 @@ package cuesheet
 
 import (
 	"bufio"
-	"github.com/stunndard/goicy/logger"
-	"github.com/stunndard/goicy/metadata"
+	"git.philgore.net/CS497/Federation/Enterprise/logger"
+	"git.philgore.net/CS497/Federation/Enterprise/metadata"
 	"io"
 	"os"
 	"strconv"

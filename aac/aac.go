@@ -1,8 +1,8 @@
 package aac
 
 import (
-	"github.com/stunndard/goicy/logger"
-	"github.com/stunndard/goicy/util"
+	"git.philgore.net/CS497/Federation/Enterprise/logger"
+	"git.philgore.net/CS497/Federation/Enterprise/util"
 	"io"
 	"os"
 	"strconv"

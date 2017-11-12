@@ -2,8 +2,8 @@ package logger
 
 import (
 	"fmt"
-	"github.com/stunndard/goicy/config"
-	"github.com/stunndard/goicy/util"
+	"git.philgore.net/CS497/Federation/Enterprise/config"
+	"git.philgore.net/CS497/Federation/Enterprise/util"
 	"os"
 	"strings"
 	"time"

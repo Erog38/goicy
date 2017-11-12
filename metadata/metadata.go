@@ -3,9 +3,9 @@ package metadata
 import (
 	"encoding/base64"
 	"github.com/go-ini/ini"
-	"github.com/stunndard/goicy/config"
-	"github.com/stunndard/goicy/logger"
-	"github.com/stunndard/goicy/network"
+	"git.philgore.net/CS497/Federation/Enterprise/config"
+	"git.philgore.net/CS497/Federation/Enterprise/logger"
+	"git.philgore.net/CS497/Federation/Enterprise/network"
 	"net/url"
 	"os/exec"
 	"strings"
