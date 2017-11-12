@@ -92,10 +92,12 @@ Generic Response:
 ```
 {
     track: {
+        id: int
         title: string
         artist: string
         album: string
         length: string
+        url: string
         }
 }
 ```
