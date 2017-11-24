@@ -89,9 +89,9 @@ func main() {
 	for {
 		var err error
 		if config.Cfg.StreamType == "file" {
-			err = stream.StreamFile(track.TrackURL)
+			err = stream.StreamFile(track)
 		} else {
-			err = stream.StreamFFMPEG(track.TrackURL)
+			err = stream.StreamFFMPEG(track)
 		}
 
 		if err != nil {

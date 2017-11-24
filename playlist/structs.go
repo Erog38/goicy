@@ -1,6 +1,10 @@
 package playlist
 
-import "github.com/jinzhu/gorm"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 type FMAResponse struct {
 	Errors     []string `json:"errors"`
@@ -35,44 +39,47 @@ type TrackGenre struct {
 }
 
 type Track struct {
-	gorm.Model
-	AlbumID               string `json:"album_id"`
-	AlbumTitle            string `json:"album_title"`
-	AlbumURL              string `json:"album_url"`
-	ArtistID              string `json:"artist_id"`
-	ArtistName            string `json:"artist_name"`
-	ArtistURL             string `json:"artist_url"`
-	ArtistWebsite         string `json:"artist_website"`
-	LicenseImageFile      string `json:"license_image_file"`
-	LicenseImageFileLarge string `json:"license_image_file_large"`
-	LicenseParentID       string `json:"license_parent_id"`
-	LicenseTitle          string `json:"license_title"`
-	LicenseURL            string `json:"license_url"`
-	TrackBitRate          string `json:"track_bit_rate"`
-	TrackComments         string `json:"track_comments"`
-	TrackComposer         string `json:"track_composer"`
-	TrackCopyrightC       string `json:"track_copyright_c"`
-	TrackCopyrightP       string `json:"track_copyright_p"`
-	TrackDateCreated      string `json:"track_date_created"`
-	TrackDateRecorded     string `json:"track_date_recorded"`
-	TrackDiscNumber       string `json:"track_disc_number"`
-	TrackDuration         string `json:"track_duration"`
-	TrackExplicit         string `json:"track_explicit"`
-	TrackExplicitNotes    string `json:"track_explicit_notes"`
-	TrackFavorites        string `json:"track_favorites"`
-	TrackFile             string `json:"track_file"`
-	TrackID               string `json:"track_id"`
-	TrackImageFile        string `json:"track_image_file"`
-	TrackInformation      string `json:"track_information"`
-	TrackInstrumental     string `json:"track_instrumental"`
-	TrackInterest         string `json:"track_interest"`
-	TrackLanguageCode     string `json:"track_language_code"`
-	TrackListens          string `json:"track_listens"`
-	TrackLyricist         string `json:"track_lyricist"`
-	TrackNumber           string `json:"track_number"`
-	TrackPublisher        string `json:"track_publisher"`
-	TrackTitle            string `json:"track_title"`
-	TrackURL              string `json:"track_url"`
+	ID                    uint `gorm:"primary_key"`
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	DeletedAt             *time.Time `sql:"index"`
+	AlbumID               string     `json:"album_id"`
+	AlbumTitle            string     `json:"album_title"`
+	AlbumURL              string     `json:"album_url"`
+	ArtistID              string     `json:"artist_id"`
+	ArtistName            string     `json:"artist_name"`
+	ArtistURL             string     `json:"artist_url"`
+	ArtistWebsite         string     `json:"artist_website"`
+	LicenseImageFile      string     `json:"license_image_file"`
+	LicenseImageFileLarge string     `json:"license_image_file_large"`
+	LicenseParentID       string     `json:"license_parent_id"`
+	LicenseTitle          string     `json:"license_title"`
+	LicenseURL            string     `json:"license_url"`
+	TrackBitRate          string     `json:"track_bit_rate"`
+	TrackComments         string     `json:"track_comments"`
+	TrackComposer         string     `json:"track_composer"`
+	TrackCopyrightC       string     `json:"track_copyright_c"`
+	TrackCopyrightP       string     `json:"track_copyright_p"`
+	TrackDateCreated      string     `json:"track_date_created"`
+	TrackDateRecorded     string     `json:"track_date_recorded"`
+	TrackDiscNumber       string     `json:"track_disc_number"`
+	TrackDuration         string     `json:"track_duration"`
+	TrackExplicit         string     `json:"track_explicit"`
+	TrackExplicitNotes    string     `json:"track_explicit_notes"`
+	TrackFavorites        string     `json:"track_favorites"`
+	TrackFile             string     `json:"track_file"`
+	TrackID               string     `json:"track_id"`
+	TrackImageFile        string     `json:"track_image_file"`
+	TrackInformation      string     `json:"track_information"`
+	TrackInstrumental     string     `json:"track_instrumental"`
+	TrackInterest         string     `json:"track_interest"`
+	TrackLanguageCode     string     `json:"track_language_code"`
+	TrackListens          string     `json:"track_listens"`
+	TrackLyricist         string     `json:"track_lyricist"`
+	TrackNumber           string     `json:"track_number"`
+	TrackPublisher        string     `json:"track_publisher"`
+	TrackTitle            string     `json:"track_title"`
+	TrackURL              string     `json:"track_url"`
 }
 
 type AlbumImages struct {
@@ -108,4 +115,38 @@ type Album struct {
 	AlbumURL          string `json:"album_url"`
 	ArtistName        string `json:"artist_name"`
 	ArtistURL         string `json:"artist_url"`
+}
+
+//api
+
+type ApiTrack struct {
+	Title    string `json:"title, omitempty"`
+	Artist   string `json:"artist, omitempty"`
+	Album    string `json:"album, omitempty"`
+	Duration string `json:"duration, omitempty"`
+	AlbumArt string `json:"album_art, omitempty"`
+	URL      string `json:"url, omitempty"`
+}
+
+type PageOpts struct {
+	Page     int `form:"page"`
+	PageSize int `form:"pageSize"`
+}
+
+type Response struct {
+	Success bool   `json:"success"`
+	Err     string `json:"error"`
+}
+
+type CurrentResponse struct {
+	Response
+	Track ApiTrack `json:"track"`
+}
+
+type AddResponse struct {
+	Response
+}
+
+type RemoveResponse struct {
+	Response
 }

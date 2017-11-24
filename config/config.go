@@ -34,6 +34,8 @@ type Config struct {
 	IsDaemon          bool   `ini:"daemon"`
 	MaxPlaylistSize   int    `ini: "maxlength"`
 	ApiKey            string `ini:"apikey"`
+	ApiPort           string `ini:"apiport"`
+	ApiLog            string `ini:"apilog"`
 	Curator           string `ini:"fmacurator"`
 	PidFile           string
 	FFMPEGPath        string
@@ -75,6 +77,8 @@ func LoadConfig(filename string) error {
 	Cfg.Playlist = ini.Section("playlist").Key("playlist").Value()
 	Cfg.PlayRandom, _ = ini.Section("playlist").Key("playrandom").Bool()
 	Cfg.ApiKey = ini.Section("playlist").Key("apikey").Value()
+	Cfg.ApiPort = ini.Section("playlist").Key("apiport").Value()
+	Cfg.ApiLog = ini.Section("playlist").Key("apilog").Value()
 	Cfg.Curator = ini.Section("playlist").Key("fmacurator").Value()
 
 	Cfg.BufferSize, _ = ini.Section("misc").Key("buffersize").Int()

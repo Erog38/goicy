@@ -2,33 +2,41 @@ package playlist
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 
 	"git.philgore.net/CS497/Federation/Enterprise/config"
 	"git.philgore.net/CS497/Federation/Enterprise/logger"
+	pq "github.com/erog38/go-priority-queue"
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type Playlist struct {
-	Playing Track
-	Queue   []Track
-	db      *gorm.DB
+	Playing   Track
+	NextTrack Track
+	Queue     pq.PriorityQueue
+	db        *gorm.DB
 }
 
 func InitPlaylist() Playlist {
 	pl := Playlist{}
 	db, err := gorm.Open("sqlite3", config.Cfg.Playlist+"?_busy_timeout=5000")
 	pl.db = db
+	pl.Queue = pq.New()
 	if err != nil {
 		logger.Term("could not open database file"+err.Error(), logger.LOG_ERROR)
 	}
 
+	os.Mkdir("/dev/shm/goicy", 0660)
+
 	pl.loadDB()
+	go RunApi(&pl)
 	return pl
 }
 
@@ -101,46 +109,95 @@ func (pl Playlist) loadDB() {
 
 }
 
-func (pl Playlist) First() {
-	t = pl.randomTrack()
-	return t
+func (pl Playlist) First() string {
+	t := pl.randomTrack()
+	pl.Playing = t
+	saveTrack("/dev/shm/goicy/current.mp3", t)
+	go pl.saveNext()
+	return "/dev/shm/goicy/current.mp3"
 }
 
-func (pl Playlist) Next() {
-
+func (pl Playlist) saveNext() {
 	var count int
 	pl.db.Model(&Track{}).Count(&count)
-
 	if count == 0 {
 		logger.Term("No records in the database!", logger.LOG_ERROR)
 	}
-	if len(playlist) == 0 {
-		t := pl.randomTrack()
-		pl.Playing = t;
+
+	var t Track
+	if pl.Queue.Len() == 0 {
+		t = pl.randomTrack()
 	} else {
-		t := pl.Playlist[0]
-		pl.Playlist = pl.Playlist[1:]
-		pl.Playing = t
+		tr, _ := pl.Queue.Pop()
+		t = tr.(Track)
 	}
+	pl.NextTrack = t
+	saveTrack("/dev/shm/goicy/next.mp3", t)
+}
+
+func saveTrack(fileName string, t Track) error {
+	if t.TrackURL == "" {
+		return errors.New("must have a track url in the track!")
+	}
+	trackURL := t.TrackURL
+	trackResp, _ := http.Get(trackURL + "/download")
+	defer trackResp.Body.Close()
+	track, _ := ioutil.ReadAll(trackResp.Body)
+	_ = ioutil.WriteFile(fileName, track, 0660)
+	return nil
+}
+
+//next should:
+// check if the "next.mp3" file exists
+// if it doesn't, download one
+// next point the
+func (pl Playlist) Next() string {
+
+	_, err := os.Stat("/dev/shm/goicy/next.mp3")
+
+	if err == os.ErrNotExist {
+		//file does not exist
+		//buffer the next file
+		pl.saveNext()
+	} else if err != nil {
+		logger.Log("Unknown file error "+err.Error(), logger.LOG_INFO)
+	}
+	//move the file from next to current
+	//buffer the next file
+	os.Rename("/dev/shm/goicy/next.mp3", "/dev/shm/goicy/current.mp3")
+	pl.Playing = pl.NextTrack
+	go pl.saveNext()
+	return "/dev/shm/goicy/current.mp3"
 }
 
 func (pl Playlist) randomTrack() Track {
 
 	var count int
+	//Set the current track
 	pl.db.Model(&Track{}).Count(&count)
-	row := count % rand.Int()
+	row := uint(count) % uint(rand.Uint64())
 	var t Track
 	pl.db.Where(Track{ID: row}).First(&t)
 	pl.Playing = t
 	return t
 }
 
-func (pl Playlist) Add(tID string) {
-	vat t Track
+func (pl Playlist) Add(tID string) error {
+	var t Track
 	pl.db.Where(&Track{TrackID: tID}).First(&t)
+
+	if t.ID == 0 {
+		return errors.New("No track in DB with this ID!")
+	}
 	//Check if the playlist already has the file, if so increase it's priority,
 	//else just add it to the end of the playlist.
-	pl.Playlist = append(pl.Playlist, t)
+	priority, contains := pl.Queue.Contains(t)
+	if contains {
+		pl.Queue.UpdatePriority(t, priority+1)
+	} else {
+		pl.Queue.Insert(t, 100)
+	}
+	return nil
 }
 
 func (pl Playlist) Close() {
