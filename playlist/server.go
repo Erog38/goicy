@@ -1,7 +1,6 @@
 package playlist
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +34,7 @@ func initRoutes() {
 	g.POST("/add", addHandler)
 	//	g.POST("/remove", removeHandler)
 	g.GET("/list", listHandler)
-	//	g.GET("/album", albumHandler)
+	//  g.GET("/album", albumHandler)
 	//	g.Get("/track", trackHandler)
 	g.GET("/current", currentHandler)
 	g.GET("/history", historyHandler)
@@ -102,28 +101,27 @@ func listHandler(c *gin.Context) {
 
 func addHandler(c *gin.Context) {
 
-	var t Track
+	var t ApiTrack
 	var resp Response
 	c.BindJSON(&t)
 
-	if t.TrackID == "" {
+	if t.ID == "" {
 		resp.Success = false
 		resp.Err = "Missing the necessary Track ID!"
-		str, _ := json.Marshal(resp)
-		c.JSON(http.StatusBadRequest, str)
+		c.JSON(http.StatusBadRequest, resp)
+		return
 	}
 	pl.mutex.Lock()
-	err := Add(t.TrackID)
+	err := Add(t.ID)
 	pl.mutex.Unlock()
 	if err != nil {
 		resp.Success = false
 		resp.Err = "Invalid Track ID!"
-		str, _ := json.Marshal(resp)
-		c.JSON(http.StatusBadRequest, str)
+		c.JSON(http.StatusBadRequest, resp)
+		return
 	}
 	resp.Success = true
-	str, _ := json.Marshal(resp)
-	c.JSON(http.StatusOK, str)
+	c.JSON(http.StatusOK, resp)
 
 }
 

@@ -1,7 +1,8 @@
-# go-radio
+# goicy
 
-This is a golang built internet radio streaming project built using 
-ffmpeg bindings provided by https://github.com/giorgisio/goav .
+This was forked from https://github.com/stunndard/goicy with the specific
+purpose for pulling data from a different source and saving it only temporarily  
+for streaming purposes
 
 It has a slim REST API built on the golang Gin framework, and supports the
 
@@ -9,12 +10,12 @@ following api calls:
 
 POST /add
 
-When calling /add, you must supply the call with a direct  URL
-to a song in either mp3 or WAV format.
+When calling /add, you must supply the call with a corresponding track id
+to a song from the free music archive
 
 ```
 {
-    song: string,
+    track_id: string,
 }
 ```
 
@@ -27,21 +28,7 @@ your response will look like:
         reason: string
     }
 }
-```
-
-GET /playlist
-
-Supplies you with the current playlist information from next to last in the
-queue up to 10 songs:
-```
-{
-    error: string,
-    response: {
-        no_queue: boolean,
-        queue: []tracks
-    }
-}
-```
+```                                  
 
 GET /current
 
@@ -52,15 +39,6 @@ Gives you the current track playing on the station
     response: {
         track: track   
     }
-}
-```
-
-DELETE /remove
-
-This uses supplied information to remove a track from the playlist
-```
-{
-    track: track,
 }
 ```
 
