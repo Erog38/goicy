@@ -1,6 +1,8 @@
 package playlist
 
 import (
+	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -10,26 +12,86 @@ type FMAResponse struct {
 	Errors     []string `json:"errors"`
 	Limit      int      `json:"limit"`
 	Message    string   `json:"message"`
-	Page       string   `json:"page"`
-	Title      string   `json:"title"`
-	Total      string   `json:"total"`
-	TotalPages int      `json:"total_pages"`
-}
-
-type AlbumResponse struct {
-	FMAResponse
-	Albums []Album `json:"dataset"`
-}
-
-type TrackResponse struct {
-	Errors     []string `json:"errors"`
-	Limit      int      `json:"limit"`
-	Message    string   `json:"message"`
 	Page       int      `json:"page"`
 	Title      string   `json:"title"`
 	Total      string   `json:"total"`
 	TotalPages int      `json:"total_pages"`
-	Tracks     []Track  `json:"dataset"`
+}
+
+type AlbumDataset struct {
+	Albums []Album `json:"dataset"`
+}
+
+type AlbumResponse struct {
+	FMAResponse
+	AlbumDataset
+}
+
+func (ar *FMAResponse) UnmarshalJSON(b []byte) error {
+	tmp := make(map[string]interface{})
+	json.Unmarshal(b, &tmp)
+	for k, v := range tmp {
+		switch k {
+		case "errors":
+			for _, err := range v.([]interface{}) {
+				ar.Errors = append(ar.Errors, err.(string))
+			}
+			break
+		case "limit":
+			ar.Limit = int(v.(float64))
+			break
+		case "message":
+			ar.Message = v.(string)
+			break
+		case "page":
+			switch t := v.(type) {
+			case int:
+				ar.Page = t
+			case string:
+				ar.Page, _ = strconv.Atoi(t)
+			}
+			break
+		case "title":
+			ar.Title = v.(string)
+			break
+		case "total":
+			ar.Total = v.(string)
+			break
+		case "total_pages":
+			ar.TotalPages = int(v.(float64))
+			break
+		}
+	}
+	return nil
+}
+
+func (ar *AlbumResponse) UnmarshalJSON(b []byte) error {
+	var fmar FMAResponse
+	var ad AlbumDataset
+	json.Unmarshal(b, &fmar)
+	json.Unmarshal(b, &ad)
+	ar.FMAResponse = fmar
+	ar.AlbumDataset = ad
+
+	return nil
+}
+func (ar *TrackResponse) UnmarshalJSON(b []byte) error {
+	var fmar FMAResponse
+	var td TrackDataset
+	json.Unmarshal(b, &fmar)
+	json.Unmarshal(b, &td)
+	ar.FMAResponse = fmar
+	ar.TrackDataset = td
+	return nil
+}
+
+type TrackDataset struct {
+	Tracks []Track `json:"dataset"`
+}
+
+type TrackResponse struct {
+	FMAResponse
+	TrackDataset
 }
 
 type TrackGenre struct {
@@ -120,12 +182,22 @@ type Album struct {
 //api
 
 type ApiTrack struct {
+	ID       string `json:"track_id"`
 	Title    string `json:"title, omitempty"`
 	Artist   string `json:"artist, omitempty"`
 	Album    string `json:"album, omitempty"`
 	Duration string `json:"duration, omitempty"`
 	AlbumArt string `json:"album_art, omitempty"`
 	URL      string `json:"url, omitempty"`
+}
+
+type ApiAlbum struct {
+	ID       string     `json:"album_id"`
+	Title    string     `json:"title, omitempty"`
+	Artist   string     `json:"artist, omitempty"`
+	AlbumArt string     `json:"album_art, omitempty"`
+	Tracks   []ApiTrack `json:"tracks"`
+	URL      string     `json:"url, omitempty"`
 }
 
 type PageOpts struct {
@@ -138,9 +210,20 @@ type Response struct {
 	Err     string `json:"error"`
 }
 
+type ListResponse struct {
+	Response
+	Total  int        `json:"total"`
+	Albums []ApiAlbum `json:"albums"`
+}
+
 type CurrentResponse struct {
 	Response
 	Track ApiTrack `json:"track"`
+}
+
+type HistoryResponse struct {
+	Response
+	History []ApiTrack `json:"history"`
 }
 
 type AddResponse struct {

@@ -4,11 +4,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"git.philgore.net/CS497/Federation/Enterprise/config"
-	"git.philgore.net/CS497/Federation/Enterprise/logger"
 	"net"
 	"strconv"
 	"time"
+
+	"git.philgore.net/CS497/Federation/Enterprise/config"
+	"git.philgore.net/CS497/Federation/Enterprise/logger"
 )
 
 var Connected bool = false
@@ -111,7 +112,7 @@ func ConnectServer(host string, port int, br float64, sr, ch int) (net.Conn, err
 			Connected = false
 			return sock, err
 		}
-		//fmt.Println(string(resp[0:3]))
+		//fmt.Println(string(resp))
 		if string(resp[0:3]) != "OK2" {
 			logger.Log("Shoutcast password rejected: "+string(resp), logger.LOG_ERROR)
 			Connected = false

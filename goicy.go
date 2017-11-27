@@ -6,7 +6,7 @@ import (
 	"git.philgore.net/CS497/Federation/Enterprise/config"
 	"git.philgore.net/CS497/Federation/Enterprise/daemon"
 	"git.philgore.net/CS497/Federation/Enterprise/logger"
-	"git.philgore.net/CS497/Federation/Enterprise/playlist"
+	pl "git.philgore.net/CS497/Federation/Enterprise/playlist"
 	"git.philgore.net/CS497/Federation/Enterprise/stream"
 	"git.philgore.net/CS497/Federation/Enterprise/util"
 	"github.com/jinzhu/gorm"
@@ -54,7 +54,7 @@ func main() {
 	logger.File("goicy v"+config.Version+" started", logger.LOG_INFO)
 	logger.Log("Loaded config file: "+inifile, logger.LOG_INFO)
 
-	pl := playlist.InitPlaylist()
+	pl.InitPlaylist()
 	// daemonizing
 	if config.Cfg.IsDaemon && runtime.GOOS == "linux" {
 		logger.Log("Daemon mode, detaching from terminal...", logger.LOG_INFO)

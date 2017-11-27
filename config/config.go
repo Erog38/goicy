@@ -33,6 +33,7 @@ type Config struct {
 	StreamPublic      bool   `ini:"public"`
 	IsDaemon          bool   `ini:"daemon"`
 	MaxPlaylistSize   int    `ini: "maxlength"`
+	ReloadDB          bool   `ini: "reloaddb"`
 	ApiKey            string `ini:"apikey"`
 	ApiPort           string `ini:"apiport"`
 	ApiLog            string `ini:"apilog"`
@@ -76,6 +77,7 @@ func LoadConfig(filename string) error {
 	Cfg.PlaylistType = ini.Section("playlist").Key("playlisttype").Value()
 	Cfg.Playlist = ini.Section("playlist").Key("playlist").Value()
 	Cfg.PlayRandom, _ = ini.Section("playlist").Key("playrandom").Bool()
+	Cfg.ReloadDB, _ = ini.Section("playlist").Key("reloaddb").Bool()
 	Cfg.ApiKey = ini.Section("playlist").Key("apikey").Value()
 	Cfg.ApiPort = ini.Section("playlist").Key("apiport").Value()
 	Cfg.ApiLog = ini.Section("playlist").Key("apilog").Value()
