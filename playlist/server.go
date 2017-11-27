@@ -51,6 +51,19 @@ func listHandler(c *gin.Context) {
 	pl.db.Table("albums").Count(&count)
 
 	resp.Total = count
+	resp.TotalPages = (resp.Total / 10) + 1
+
+	if page == -1 {
+		resp.Err = "you have been eaten by a grue"
+		resp.Success = false
+		c.JSON(http.StatusOK, resp)
+		return
+	}
+
+	if resp.TotalPages < page-1 {
+		c.JSON(http.StatusBadRequest, resp)
+	}
+
 	pl.db.Offset(10 * page).Limit(10).Find(&albums)
 	for _, a := range albums {
 
@@ -82,6 +95,7 @@ func listHandler(c *gin.Context) {
 				Tracks:   apiTracks,
 			})
 	}
+	resp.Page = page
 	resp.Success = true
 	c.JSON(http.StatusOK, resp)
 }

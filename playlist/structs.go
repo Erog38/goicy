@@ -212,8 +212,10 @@ type Response struct {
 
 type ListResponse struct {
 	Response
-	Total  int        `json:"total"`
-	Albums []ApiAlbum `json:"albums"`
+	Total      int        `json:"total"`
+	TotalPages int        `json:"total_pages"`
+	Page       int        `json:"page"`
+	Albums     []ApiAlbum `json:"albums"`
 }
 
 type CurrentResponse struct {
