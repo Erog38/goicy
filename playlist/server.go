@@ -23,11 +23,26 @@ func RunApi() {
 	gin.DefaultWriter = io.MultiWriter(f)
 
 	g = gin.Default()
-
+	g.Use(CORSMiddleware())
 	initRoutes()
 	logger.Log("Starting api on port "+config.Cfg.ApiPort, logger.LOG_DEBUG)
 	port := ":" + config.Cfg.ApiPort
 	g.Run(port)
+}
+
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	}
 }
 
 func initRoutes() {
