@@ -160,7 +160,6 @@ func saveTrack(fileName string, t Track) error {
 		return errors.New("must have a track url in the track!")
 	}
 	trackURL := strings.TrimSpace(t.TrackURL) + "/download"
-	logger.Log("Downloading "+trackURL+" to "+fileName, logger.LOG_DEBUG)
 	trackResp, _ := http.Get(trackURL + "/download")
 	defer trackResp.Body.Close()
 	track, _ := ioutil.ReadAll(trackResp.Body)
